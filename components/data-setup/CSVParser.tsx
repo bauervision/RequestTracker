@@ -77,9 +77,11 @@ export const CSVParser: React.FC<CSVParserProps> = ({
 
       parsedData.pop(); // Remove any extra data
 
+      // Set the headers and schema only once.
       setHeaders(rows, newSchemaArray);
       handleDataCreation(parsedData);
       saveParsedData(rows, parsedData);
+      setSchema(newSchemaArray);
     };
     reader.readAsText(file);
   };

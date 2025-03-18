@@ -8,6 +8,7 @@ import React, {
   useEffect,
 } from "react";
 import { useWorkflow } from "@/app/context/WorkflowContext";
+import { FIELD_TYPES } from "../constants";
 
 export interface DocumentData {
   name: string;
@@ -93,6 +94,88 @@ export const SchemaProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, []);
 
+  const generateColDefs = (schemaArray: SchemaItem[]): ColDef[] => {
+    return schemaArray
+      .filter((field) => !field.isHidden)
+      .map((field): ColDef => {
+        // Set filter type based on field type
+        const filterType =
+          field.type === FIELD_TYPES.DATE
+            ? "agDateColumnFilter"
+            : field.type === FIELD_TYPES.NUMBER ||
+              field.type === FIELD_TYPES.FLOAT ||
+              field.type === FIELD_TYPES.CURRENCY
+            ? "agNumberColumnFilter"
+            : "agTextColumnFilter";
+
+        const baseColDef: ColDef = {
+          headerName: field.parameter,
+          field: field.parameter,
+          filter: filterType,
+        };
+
+        switch (field.type) {
+          case FIELD_TYPES.NUMBER:
+            return {
+              ...baseColDef,
+              comparator: (valueA: any, valueB: any) =>
+                Number(valueA) - Number(valueB),
+              valueParser: (params: any) => Number(params.newValue),
+            };
+
+          case FIELD_TYPES.CURRENCY:
+            return {
+              ...baseColDef,
+              comparator: (valueA: any, valueB: any) =>
+                Number(valueA) - Number(valueB),
+              valueParser: (params: any) => {
+                return Number(params.newValue);
+              },
+              valueFormatter: (params: any) => {
+                const numericValue = Number(params.value);
+                return !isNaN(numericValue)
+                  ? new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                    }).format(numericValue)
+                  : "";
+              },
+            };
+
+          case FIELD_TYPES.DATE:
+            return {
+              ...baseColDef,
+              comparator: (valueA: any, valueB: any) =>
+                new Date(valueA).getTime() - new Date(valueB).getTime(),
+              valueParser: (params: any) => {
+                const parsedDate = new Date(params.newValue);
+                return isNaN(parsedDate.getTime())
+                  ? params.oldValue
+                  : parsedDate.toISOString();
+              },
+              // Add filter parameters similar to your historical version
+              filterParams: {
+                comparator: (filterDate: Date, cellValue: string) => {
+                  if (!cellValue) return -1;
+                  const [datePart] = cellValue.split(" ");
+                  const cellDate = new Date(datePart);
+                  if (isNaN(cellDate.getTime())) return -1;
+                  if (filterDate.getTime() === cellDate.getTime()) return 0;
+                  return filterDate.getTime() > cellDate.getTime() ? -1 : 1;
+                },
+                browserDatePicker: true,
+              },
+            };
+
+          // For TEXT and DOCUMENTS or any other types fallback to the base definition
+          case FIELD_TYPES.TEXT:
+          case FIELD_TYPES.DOCUMENTS:
+          default:
+            return baseColDef;
+        }
+      });
+  };
+
   // Generate column definitions from the schema
   const updateColDefs = (newSchema: Schema | null) => {
     if (!newSchema) {
@@ -101,30 +184,7 @@ export const SchemaProvider: React.FC<{ children: ReactNode }> = ({
       return;
     }
 
-    const updatedColDefs: ColDef[] = newSchema
-      .filter((item) => !item.isHidden) // Filter out hidden fields
-      .map((item) => ({
-        headerName: item.parameter || "",
-        field: item.parameter || "",
-        filter:
-          item.type === "DATE"
-            ? "agDateColumnFilter"
-            : item.type === "NUMBER" ||
-              item.type === "FLOAT" ||
-              item.type === "CURRENCY"
-            ? "agNumberColumnFilter"
-            : "agTextColumnFilter",
-        ...(item.type === "CURRENCY" && {
-          valueFormatter: (params) =>
-            params.value
-              ? new Intl.NumberFormat("en-US", {
-                  style: "currency",
-                  currency: "USD",
-                }).format(params.value)
-              : "",
-        }),
-      }));
-
+    const updatedColDefs = generateColDefs(newSchema);
     setColDefsState(updatedColDefs);
     localStorage.setItem(COL_DEFS_STORAGE_KEY, JSON.stringify(updatedColDefs));
   };
@@ -132,10 +192,9 @@ export const SchemaProvider: React.FC<{ children: ReactNode }> = ({
   // Save schema & update colDefs
   const setSchema = (newSchema: Schema | null) => {
     setSchemaState(newSchema);
-
     if (newSchema) {
       localStorage.setItem(SCHEMA_STORAGE_KEY, JSON.stringify(newSchema));
-      updateColDefs(newSchema); // Ensure colDefs are updated
+      updateColDefs(newSchema);
     } else {
       localStorage.removeItem(SCHEMA_STORAGE_KEY);
       setColDefsState(null);

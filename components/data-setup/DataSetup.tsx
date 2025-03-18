@@ -45,72 +45,6 @@ const DataSetup: React.FC = () => {
     ...SHIPPING_FIELDS,
   ]);
 
-  // Helper function to generate column definitions from a schema array
-  const generateColDefs = (schemaArray: SchemaItem[]): ColDef[] => {
-    return schemaArray
-      .filter((field) => !field.isHidden)
-      .map((field): ColDef => {
-        const baseColDef = {
-          headerName: field.parameter,
-          field: field.parameter,
-        };
-
-        switch (field.type) {
-          case FIELD_TYPES.NUMBER:
-            return {
-              ...baseColDef,
-              // Compare as numbers
-              comparator: (valueA: any, valueB: any) =>
-                Number(valueA) - Number(valueB),
-              // Parse new values as numbers
-              valueParser: (params: any) => Number(params.newValue),
-            };
-          case FIELD_TYPES.CURRENCY:
-            console.log("Generating currency colDef for:", field.parameter);
-            return {
-              ...baseColDef,
-              comparator: (valueA: any, valueB: any) =>
-                Number(valueA) - Number(valueB),
-              valueParser: (params: any) => {
-                console.log("Currency valueParser:", params);
-                return Number(params.newValue);
-              },
-              valueFormatter: (params: any) => {
-                console.log("Currency formatter called with:", params.value);
-                const numericValue = Number(params.value);
-                if (!isNaN(numericValue)) {
-                  return new Intl.NumberFormat("en-US", {
-                    style: "currency",
-                    currency: "USD",
-                  }).format(numericValue);
-                }
-                return params.value;
-              },
-            };
-
-          case FIELD_TYPES.DATE:
-            return {
-              ...baseColDef,
-              // Compare dates by converting to timestamps
-              comparator: (valueA: any, valueB: any) =>
-                new Date(valueA).getTime() - new Date(valueB).getTime(),
-              // Parse new values as ISO date strings (adjust parsing if you have a custom format)
-              valueParser: (params: any) => {
-                const parsedDate = new Date(params.newValue);
-                return isNaN(parsedDate.getTime())
-                  ? params.oldValue
-                  : parsedDate.toISOString();
-              },
-            };
-          // For text and documents, default sorting works fine.
-          case FIELD_TYPES.TEXT:
-          case FIELD_TYPES.DOCUMENTS:
-          default:
-            return baseColDef;
-        }
-      });
-  };
-
   // Update handler for CSV schema.
   const handleUpdateCSVField = (
     id: string,
@@ -122,34 +56,14 @@ const DataSetup: React.FC = () => {
         field.id.toString() === id ? { ...field, [key]: value } : field
       );
       setSchema(updatedSchema);
-
-      // Recalculate column definitions based on the updated schema.
-      const newColDefs = generateColDefs(updatedSchema);
-
-      console.log("Updating CSV field...");
-      setColDefs(newColDefs);
     }
   };
 
   // When saving in manual mode, simply use the manual schema.
   const handleSaveManualSchema = () => {
-    setSchema(manualSchema);
-
-    // Update AGGrid column definitions using only fields that are not hidden.
-    const completeColDefs: ColDef[] = manualSchema
-      .filter((field) => !field.isHidden)
-      .map((field): ColDef => {
-        const parameter: string = field.parameter || "";
-        return {
-          headerName: parameter,
-          field: parameter,
-        };
-      });
-    setColDefs(completeColDefs);
-    console.log(completeColDefs);
-
+    setSchema(manualSchema); // This will trigger updateColDefs automatically via the context's useEffect
     setTimeout(() => null, 1000);
-    showToast("Schema Saved successfully", "success");
+    showToast("Manual Schema Saved successfully", "success");
   };
 
   const handleAddField = () => {
@@ -195,10 +109,6 @@ const DataSetup: React.FC = () => {
       setRowData([]);
     }
   };
-
-  useEffect(() => {
-    console.log("Current Schema:", schema);
-  }, [schema]);
 
   // Separate built‑in fields from additional (user-added) fields.
   const builtInFields = manualSchema.filter((field) => field.defaultField);
@@ -460,10 +370,7 @@ const DataSetup: React.FC = () => {
               <CSVParser
                 saveParsedData={(rows, data) => setRowData(data)}
                 setHeaders={(rows, schemaArray) => {
-                  // In CSV mode, we use only the CSV-generated schema.
                   setSchema(schemaArray);
-                  const newColDefs = generateColDefs(schemaArray);
-                  setColDefs(newColDefs);
                 }}
                 handleDataCreation={setRowData}
                 setSchema={setSchema}

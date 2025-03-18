@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useMemo, useRef, useCallback, useEffect } from "react";
+import React, {
+  useMemo,
+  useRef,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
@@ -69,8 +75,13 @@ const GridTable = () => {
   const { selectRow } = useRequestContext(); // Access selectRow from RequestContext
   const gridApiRef = useRef<any>(null);
 
+  const [gridApi, setGridApi] = useState<any>(null);
+  const [columnApi, setColumnApi] = useState<any>(null);
+
   const onGridReady = useCallback((params: any) => {
     gridApiRef.current = params.api;
+    setGridApi(params.api);
+    setColumnApi(params.columnApi);
   }, []);
 
   const defaultColDef = useMemo(() => {
@@ -90,23 +101,14 @@ const GridTable = () => {
     }
   };
 
-  // Override the "Request Workflow" column to include progress percent on the fly.
-  const updatedColDefs = useMemo(() => {
-    if (!colDefs) return [];
-    return colDefs.map((def) => {
-      if (def.field === "Request Workflow") {
-        return {
-          ...def,
-          cellRenderer: requestWorkflowCellRenderer,
-        };
-      }
-      return def;
-    });
-  }, [colDefs]);
-
   useEffect(() => {
-    console.log(rowData);
-  }, []);
+    if (columnApi && colDefs && colDefs.length > 0) {
+      columnApi.setColumnDefs(colDefs);
+      if (gridApi) {
+        gridApi.refreshCells();
+      }
+    }
+  }, [colDefs, columnApi, gridApi]);
 
   return (
     <div
@@ -124,14 +126,14 @@ const GridTable = () => {
       ) : (
         <AgGridReact
           rowData={rowData}
-          columnDefs={updatedColDefs}
+          columnDefs={colDefs}
           defaultColDef={defaultColDef}
           rowSelection="single"
           onSelectionChanged={onSelectionChanged}
           pagination={true}
           paginationPageSize={10}
           onGridReady={onGridReady}
-          ref={gridApiRef}
+          //ref={gridApiRef}
           rowClassRules={rowClassRules}
         />
       )}
