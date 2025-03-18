@@ -1,0 +1,94 @@
+.Header {
+  width: 100%;
+  height: 90.575px;
+  display: flex;
+  /* flex-shrink: 0; */
+  padding: 1rem;
+  background-color: white;
+  z-index: 100;
+}
+
+.headerSection {
+  display: flex;
+  margin-top: auto;
+  margin-bottom: auto;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.headerSectionRight {
+  display: flex;
+  margin-top: auto;
+  margin-bottom: auto;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  margin-left: auto;
+}
+
+.headerItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.5rem 0 1.5rem;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.logo {
+  width: 130px;
+  padding-bottom: 8px;
+  cursor: pointer;
+}
+
+.environmentLabel {
+  color: green;
+}
+
+.usernameLabel {
+  padding-right: 12px;
+}
+
+.navLink {
+  color: black;
+}
+
+.iconContainer * {
+  width: 22px;
+  margin: 0.5rem;
+  fill: #4c4c4c;
+}
+
+.actionIcon {
+  width: 22px;
+  transition: width 0.25s;
+  cursor: pointer;
+}
+
+.actionIcon:hover {
+  width: 24px;
+  transition: width 0.25s;
+}
+
+.trackerButtonContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.terrier {
+  cursor: pointer;
+  width: 30px;
+  transition: width 0.25s;
+}
+
+.terrier:hover {
+  width: 32px;
+  transition: width 0.25s;
+}
+
+.terrierLabel {
+  padding-left: 12px;
+  cursor: pointer;
+}

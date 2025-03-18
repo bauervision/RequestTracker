@@ -1,0 +1,40 @@
+/* workflow.css */
+
+ul {
+  list-style-type: none; /* Remove default list styling */
+  padding-left: 20px; /* Adjust padding for indentation */
+}
+
+li {
+  margin-bottom: 10px; /* Space between list items */
+}
+
+.button-container {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+button:hover {
+  background-color: #f0f0f0;
+}
+
+.workflow-item {
+  margin-bottom: 20px;
+}
+.workflow-item-header {
+  display: flex;
+  align-items: top;
+  margin-bottom: 10px;
+}
+.accordion-trigger-button {
+  margin-right: 10px; /* Adjust as needed */
+}
+.item-info {
+  flex-grow: 1;
+}
+.button-container {
+  display: flex;
+  align-items: top;
+  gap: 10px;
+}
